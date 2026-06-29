@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   bot:
-    image: 192.168.0.135:5000/bot_image
+    build: ./bot_image
     container_name: bot_container
     depends_on:
       db:
@@ -13,7 +13,7 @@ services:
       - bot_network
 
   db:
-    image: 192.168.0.135:5000/db_image
+    build: ./db_image
     container_name: db_container
     environment:
       - POSTGRES_USER=${DB_USER}
@@ -31,7 +31,7 @@ services:
       - bot_network
 
   db_slave:
-    image: 192.168.0.135:5000/db_repl_image
+    build: ./db_repl_image
     container_name: db_repl_container
     depends_on:
       db:
@@ -46,12 +46,11 @@ services:
       rm -rf /var/lib/postgresql/data/*
       until pg_basebackup -R -h db -U repl_user -D /var/lib/postgresql/data -P
       do
-      echo 'Waiting for primary to connect...'
-      sleep 1s
+        echo 'Waiting for primary to connect...'
+        sleep 1s
       done
       echo 'Backup done, starting replica...'
       chmod 0700 /var/lib/postgresql/data
-      echo 'Chmod is completed'
       postgres
       "
     networks:
