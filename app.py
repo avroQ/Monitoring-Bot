@@ -489,9 +489,11 @@ def cmd_get_repl_logs(message):
     logger.info(f"Пользователь {message.chat.id} запросил логи репликации")
     # Команда выполняет grep с Tail на Master сервере по SSH
     cmd = (
-        'docker logs db_container 2>&1 | '
-        'grep -iE "replication|walsender|walreceiver|ready to accept connections|received replication command" '
-        '| tail -n 30'
+        "if command -v docker >/dev/null 2>&1 && docker ps -a --format '{{.Names}}' | grep -Eq '^db_container$'; then "
+        "docker logs db_container 2>&1; "
+        "else "
+        "sudo -u postgres bash -c 'cat /var/lib/postgresql/16/main/custom_logs/$(ls -t /var/lib/postgresql/16/main/custom_logs/ | head -1)' 2>/dev/null; "
+        "fi | grep -iE 'replication|walsender|walreceiver|ready to accept connections|received replication command' | tail -n 30"
     )
     send_ssh_result(message, "Логи репликации PostgreSQL (Master)", cmd)
 
