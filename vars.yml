@@ -1,4 +1,4 @@
-TOKEN: ""
+TOKEN: "your-token"
 RM_HOST: "192.168.29.159"
 RM_PORT: "22"
 RM_USERNAME: "perebikovskii"
