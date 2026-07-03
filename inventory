@@ -1,11 +1,11 @@
 [db_master]
-db ansible_host=192.168.29.159 ansible_user=perebikovskii ansible_password=123 ansible_become_password=123
+db ansible_host=192.168.29.158 ansible_user=perebikovskii ansible_password=123 ansible_become_password=123
 
 [db_replica]
 db_repl ansible_host=192.168.29.159 ansible_user=perebikovskii ansible_password=123 ansible_become_password=123
 
 [bot]
-bot_server ansible_host=192.168.29.158 ansible_user=perebikovskii ansible_password=123 ansible_become_password=123
+bot_server ansible_host=192.168.29.134 ansible_user=perebikovskii ansible_password=123 ansible_become_password=123
 
 [database:children]
 db_master
@@ -15,10 +15,10 @@ db_replica
 DB_USER=postgres
 DB_PASSWORD=123
 DB_DATABASE=email_phone
-DB_HOST=192.168.29.159
+DB_HOST=192.168.29.158
 DB_PORT=5432
 DB_REPL_USER=repl_user
 DB_REPL_PASSWORD=123
 DB_REPL_HOST=192.168.29.159
-DB_REPL_PORT=5433
+DB_REPL_PORT=5432
 POSTGRES_VERSION=16

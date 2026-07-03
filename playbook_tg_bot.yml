@@ -1,8 +1,8 @@
-- name: Install packages
-  hosts: db_master
+- name: Install PostgreSQL on database servers
+  hosts: database
   become: yes
   tasks:
-    - name: Install postgresql
+    - name: Install postgresql packages
       ansible.builtin.apt:
         name:
           - postgresql
@@ -155,106 +155,46 @@
   vars_files:
     - vars.yml
   tasks:
-    - name: Check replica
-      ansible.builtin.stat:
-        path: /var/lib/postgresql/16/replica
-      register: replica_cluster
-
-    - name: Create replica cluster
-      ansible.builtin.command: pg_createcluster 16 replica
-      when: not replica_cluster.stat.exists
-
-    - name: Stop replica
+    - name: Stop postgresql on replica
       ansible.builtin.service:
-        name: postgresql@16-replica
+        name: postgresql
         state: stopped
       ignore_errors: yes
 
     - name: Clear replica data
       ansible.builtin.file:
-        path: /var/lib/postgresql/16/replica
+        path: /var/lib/postgresql/16/main/
         state: absent
 
-    - name: Create replica dir
+    - name: Create replica data dir
       ansible.builtin.file:
-        path: /var/lib/postgresql/16/replica
+        path: /var/lib/postgresql/16/main/
         state: directory
         owner: postgres
         group: postgres
         mode: '0700'
 
-    - name: Run basebackup
+    - name: Run basebackup from master
       become_user: postgres
       ansible.builtin.expect:
         command: >
           pg_basebackup -P -R -X stream
-          -D /var/lib/postgresql/16/replica
-          -h 127.0.0.1
-          -p 5432
+          -D /var/lib/postgresql/16/main/
+          -h {{ DB_HOST }}
           -U {{ DB_REPL_USER }}
         responses:
           "Password": "{{ DB_REPL_PASSWORD }}"
         timeout: 120
 
-    - name: Set replica port
-      ansible.builtin.lineinfile:
-        path: /etc/postgresql/16/replica/postgresql.conf
-        regexp: '^port\s*='
-        line: "port = 5433"
-        create: yes
-
-    - name: Set data_directory
-      ansible.builtin.lineinfile:
-        path: /etc/postgresql/16/replica/postgresql.conf
-        regexp: '^data_directory\s*='
-        line: "data_directory = '/var/lib/postgresql/16/replica'"
-        create: yes
-
-    - name: Set hba_file
-      ansible.builtin.lineinfile:
-        path: /etc/postgresql/16/replica/postgresql.conf
-        regexp: '^hba_file\s*='
-        line: "hba_file = '/etc/postgresql/16/replica/pg_hba.conf'"
-        create: yes
-
-    - name: Set ident_file
-      ansible.builtin.lineinfile:
-        path: /etc/postgresql/16/replica/postgresql.conf
-        regexp: '^ident_file\s*='
-        line: "ident_file = '/etc/postgresql/16/replica/pg_ident.conf'"
-        create: yes
-
-    - name: Set cluster_name
-      ansible.builtin.lineinfile:
-        path: /etc/postgresql/16/replica/postgresql.conf
-        regexp: '^cluster_name\s*='
-        line: "cluster_name = '16/replica'"
-        create: yes
-
-    - name: Set pid file
-      ansible.builtin.lineinfile:
-        path: /etc/postgresql/16/replica/postgresql.conf
-        regexp: '^external_pid_file\s*='
-        line: "external_pid_file = '/var/run/postgresql/16-replica.pid'"
-        create: yes
-
-    - name: Copy pg_hba to replica
-      ansible.builtin.copy:
-        src: ./pg_hba.conf
-        dest: /etc/postgresql/16/replica/pg_hba.conf
-        owner: postgres
-        group: postgres
-        mode: '0644'
-
     - name: Start replica
       ansible.builtin.service:
-        name: postgresql@16-replica
+        name: postgresql
         state: started
         enabled: yes
 
     - name: Wait for replica
       ansible.builtin.wait_for:
-        port: 5433
+        port: 5432
         delay: 3
         timeout: 30
 
